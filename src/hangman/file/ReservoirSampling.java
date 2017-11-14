@@ -6,7 +6,7 @@
  * @ref https://kebomix.wordpress.com/2011/01/09/reservoir-sampling-java/
  */
 
-package hangmangame;
+package hangman.file;
 
 import java.io.BufferedReader;
 import java.io.File;

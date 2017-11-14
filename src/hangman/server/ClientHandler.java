@@ -1,37 +1,25 @@
-/**
- *
- * @author Tobias Mellstrand
- * @date 2017-11-09
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
+package hangman.server;
 
-package hangmangame;
-
-import java.net.*;
-import java.io.*;
+import hangman.common.MessageTypes;
+import hangman.file.ReservoirSampling;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Arrays;
 import java.util.List;
 
-
-public class HangmanServer {
-    
-    private static final int SERVER_PORT = 5000;
-    
-    public HangmanServer() {
-	try {
-	    ServerSocket sock = new ServerSocket(SERVER_PORT,100);
-	    while (true)
-		new ClientHandler(sock.accept()).start();
-
-	} catch(IOException e) {
-	    System.err.println(e);
-	}
-	
-    }
-    
-    public void main(String[] args) {
-	new HangmanServer();
-    }
-}
-
+/**
+ *
+ * @author mellstrand
+ */
 
 class ClientHandler extends Thread {
     
@@ -62,6 +50,7 @@ class ClientHandler extends Thread {
 	}
     }
     
+    @Override
     public void run() {
 	
 	try {
@@ -71,23 +60,36 @@ class ClientHandler extends Thread {
 	    toClient.flush();
 
 	    while(true) {
+		
 		String indata = fromClient.readLine();
 		if(indata==null || indata.equals("")) break;
 		String[] requestToken = indata.split(" ");
-		if(requestToken[0].equals("INIT")) {
-		    initGame();
-		} else if(requestToken[0].equals("NEW")) {
-		    newGame();
-		} else if(requestToken[0].equals("GUESS")) {
-		    if(checkString(requestToken[1])) {
-			updateScore(true);
-			sendMessage("Game complete, new game?");
-		    } else {
-			updateRemainingAttempts();
-			// SEND GAME STATUS MESSAGE
-		    }
-		} else if(requestToken[0].equals("END")) {
-		    clientSocket.close();
+		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
+		
+		switch(msgType) {
+		    
+		    case INIT:
+			initGame();
+			break;
+		    case NEW:
+			newGame();
+			break;
+		    case GUESS:
+			if(checkString(requestToken[1])) {
+			    updateScore(true);
+			    sendMessage("Game complete, new game?");
+			} else {
+			    updateRemainingAttempts();
+			    // SEND GAME STATUS MESSAGE
+			}
+			break;
+		    case END:
+			fromClient.close();
+			toClient.close();
+			clientSocket.close();
+			break;
+		    default:
+			   
 		}
 	    }
 	    
@@ -98,6 +100,20 @@ class ClientHandler extends Thread {
 	}
 	
     }
+    
+    
+    private void initGame() throws IOException {
+	score = 0;
+	rs = new ReservoirSampling(wordFile);
+	wordList = rs.getSample();
+	newGame();
+    }
+    
+    private void newGame() throws IOException {
+	setNewWord(getNewWord());
+	setRemainingAttempts();
+	initGuessString();
+    } 
     
     private String getNewWord() throws IOException {
 
@@ -124,10 +140,10 @@ class ClientHandler extends Thread {
     }
     
     private void initGuessString() {
-	StringBuilder temp = new StringBuilder(correctWord.length()).append('_');
-	guessString = temp.toString();
-	//guessString = new String(new char[correctWord.length()]).replace('\0', '-');
-    }
+	char[] chars = new char[correctWord.length()];
+	Arrays.fill(chars, '_');
+	guessString = new String(chars);
+}
     
     private boolean checkString(String clientGuess) {
 	
@@ -175,24 +191,6 @@ class ClientHandler extends Thread {
 	remainingAttempts--;
     }
 
-    private void newGame() throws IOException {
-	setNewWord(getNewWord());
-	setRemainingAttempts();
-	initGuessString();
-    }
-    
-    private void initGame() throws IOException {
-	score = 0;
-	rs = new ReservoirSampling(wordFile);
-	wordList = rs.getSample();
-	newGame();
-	/*
-	setNewWord(getNewWord());
-	setRemainingAttempts();
-	initGuessString();
-	*/
-    }
-    
     private void sendMessage(String message) {
 	toClient.println(message);
 	toClient.flush();
