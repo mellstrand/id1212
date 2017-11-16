@@ -22,12 +22,12 @@ public class HangmanClient implements Runnable {
     public HangmanClient(String name) {
 	
 	this.name = name;
-	serverHandler = new ServerHandler();
     }
     
     public void start() {
 	
-	serverHandler.connect();
+        serverHandler = new ServerHandler();
+	serverHandler.connect(name);
 	new Thread(this).start();
     }
     

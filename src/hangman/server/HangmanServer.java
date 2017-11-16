@@ -15,10 +15,11 @@ public class HangmanServer {
     private static final int SERVER_PORT = 5000;
     
     
-    public void main(String[] args) {
+    public static void main(String[] args) {
 	
 	try {
 	    ServerSocket sock = new ServerSocket(SERVER_PORT,100);
+	    System.out.println("Server running...");
 	    while (true)
 		new ClientHandler(sock.accept()).start();
 

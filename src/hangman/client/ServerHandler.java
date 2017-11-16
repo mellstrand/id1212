@@ -27,7 +27,7 @@ public class ServerHandler {
     BufferedReader fromServer;
     PrintWriter toServer;
     
-    public void connect() {
+    public void connect(String name) {
 	
 	CompletableFuture.runAsync(() -> {
 	    try {
@@ -36,6 +36,8 @@ public class ServerHandler {
 
 		fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		toServer = new PrintWriter(socket.getOutputStream());
+
+		transmit(name);
 
 	    } catch(IOException ieo) {
 		System.err.println(ieo);

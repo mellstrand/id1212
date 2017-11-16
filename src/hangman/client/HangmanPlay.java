@@ -6,26 +6,23 @@
 
 package hangman.client;
 
-import java.net.*;
-import java.io.*;
 
-
-public class HangmanGame {
-
-    String name;
-    
+public class HangmanPlay {
+ 
     /**
      * @param args the command line arguments
      */
-    public void main(String[] args) {
+    public static void main(String[] args) {
 	
-	if(!(args[0] == null)) {
+	String name;
+	
+	if(!(args.length == 0)) {
 	    name = args[0];
 	} else {
 	    name = "DefaultPlayer";
 	}
 	
-	new HangmanClient(name);
+	new HangmanClient("TEST").start();
  
     }
 }

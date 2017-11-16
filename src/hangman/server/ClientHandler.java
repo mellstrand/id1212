@@ -59,7 +59,7 @@ class ClientHandler extends Thread {
 	
 	try {
 	    String namn = fromClient.readLine();
-	    System.out.println(namn);
+	    System.out.println(namn + " anslöt servern");
 	    toClient.println("Hello, "+namn);
 	    toClient.flush();
 
