@@ -4,31 +4,31 @@
  */
 package hangman.client;
 
+import hangman.common.Constants;
 import hangman.common.MessageTypes;
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 import java.util.Scanner;
+import java.util.StringJoiner;
 
 
-public class HangmanClient extends Thread {
+public class HangmanClient implements Runnable {
     
-    Socket socket;
-    BufferedReader fromServer;
-    PrintWriter toServer;
-    
+    String name;
+    ServerHandler serverHandler;
     Scanner scanner = new Scanner(System.in);
     
-    public HangmanClient(Socket socket) {
+    public HangmanClient(String name) {
 	
-	this.socket = socket;
+	this.name = name;
+	serverHandler = new ServerHandler();
+    }
+    
+    public void start() {
 	
-	try {
-	    fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-	    toServer = new PrintWriter(socket.getOutputStream());
-	} catch(IOException ioe) {
-	    System.err.println(ioe);
-	}
-	
+	serverHandler.connect();
+	new Thread(this).start();
     }
     
     @Override
@@ -38,14 +38,14 @@ public class HangmanClient extends Thread {
 	    
 	    try {
 	    
-		String inData = fromServer.readLine();
+		String inData = serverHandler.receive();
 		if(inData==null || inData.equals("")) break;
-		String[] requestToken = inData.split(" ");
+		String[] requestToken = inData.split(Constants.DELIMETER);
 		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
 		
 		switch(msgType) {
 		    case STATUS:
-			System.out.println(requestToken[1]);
+			print(Arrays.copyOfRange(requestToken, 1, requestToken.length));
 			break;
 		    case NEW:
 			playAgain();
@@ -85,7 +85,16 @@ public class HangmanClient extends Thread {
     }
     
     private void sendMessage(MessageTypes mt, String line) {
-	toServer.println(mt.toString() +" "+ line);
-	toServer.flush();
+
+    	StringJoiner joiner = new StringJoiner(Constants.DELIMETER);
+        joiner.add(mt.toString());
+        joiner.add(line);
+	serverHandler.transmit(joiner.toString());
+    }
+    
+    private void print(String... parts) {
+	for (String part: parts) {
+          System.out.println(part);
+        }
     }
 }

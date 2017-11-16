@@ -20,32 +20,33 @@ import java.util.Random;
 
 public class ReservoirSampling {
     
-    File file;
+    private int size;
+    public File file;
     
-    public ReservoirSampling(File file) {
+    public ReservoirSampling(File file, int size) {
 	
 	this.file = file;
+	this.size = size;
 	
     }
     
     public List<String> getSample() throws FileNotFoundException, IOException {
 	
-	int reservoirSize = 10;
 	int count = 0;
 	int randomNumber;
 	String currentLine;
 	
-	List<String> reservoirList = new ArrayList<>(reservoirSize);
+	List<String> reservoirList = new ArrayList<>(size);
 	BufferedReader br = new BufferedReader(new FileReader(file));
 	Random ra = new Random();
 	
 	while((currentLine = br.readLine()) != null) {
 	    count++;
-	    if(count <= reservoirSize) {
+	    if(count <= size) {
 		reservoirList.add(currentLine);
 	    } else {
 		randomNumber = (int)ra.nextInt(count);
-		if(randomNumber < reservoirSize) {
+		if(randomNumber < size) {
 		    reservoirList.set(randomNumber, currentLine);
 		}
 	    }

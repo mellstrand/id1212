@@ -6,6 +6,7 @@
 package hangman.server;
 
 import hangman.common.MessageTypes;
+import hangman.common.Constants;
 import hangman.file.ReservoirSampling;
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,13 +16,17 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;
+import java.util.StringJoiner;
 
 /**
  *
  * @author mellstrand
+ * @date 2017-11-15
  */
 
 class ClientHandler extends Thread {
+    
+    private final static int SAMPLE_SIZE = 10;
     
     Socket clientSocket;
     BufferedReader fromClient;
@@ -32,12 +37,11 @@ class ClientHandler extends Thread {
     String correctWord;
     String guessString;
     int remainingAttempts;
-    int score;
+    int clientScore;
     
     public ClientHandler(Socket clientSocket) {
 	
 	this.clientSocket = clientSocket;
-	
 	
 	try {
 	    wordFile = new File("words.txt");
@@ -63,30 +67,33 @@ class ClientHandler extends Thread {
 		
 		String indata = fromClient.readLine();
 		if(indata==null || indata.equals("")) break;
-		String[] requestToken = indata.split(" ");
+		String[] requestToken = indata.split(Constants.DELIMETER);
 		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
 		
 		switch(msgType) {
 		    
 		    case INIT:
 			initGame();
+			//SEND START MESSAGE
 			break;
 		    case NEW:
 			newGame();
+			//SEND START MESSAGE
 			break;
 		    case GUESS:
 			if(checkString(requestToken[1])) {
 			    updateScore(true);
-			    sendMessage("Game complete, new game?");
+			    sendMessage(MessageTypes.GUESS, "Game complete, new game?");
 			} else {
 			    updateRemainingAttempts();
-			    // SEND GAME STATUS MESSAGE
+			    sendMessage(MessageTypes.STATUS, statusString());
 			}
 			break;
 		    case END:
 			fromClient.close();
 			toClient.close();
 			clientSocket.close();
+			clientSocket = null;
 			break;
 		    default:
 			   
@@ -95,16 +102,24 @@ class ClientHandler extends Thread {
 	    
 	    System.out.println("Client " +namn +" ended the session");
 	
-	} catch(Exception e) {
-	    System.err.println(e);
+	} catch(IOException ioe) {
+	    System.err.println(ioe);
 	}
 	
     }
     
-    
+    private String statusString() {
+	
+	StringJoiner joiner = new StringJoiner(Constants.DELIMETER);
+        joiner.add("Word: "+guessString);
+        joiner.add("Remaining Attempts: "+remainingAttempts);
+	joiner.add("Score: "+clientScore);
+        return joiner.toString();
+    }
+ 
     private void initGame() throws IOException {
-	score = 0;
-	rs = new ReservoirSampling(wordFile);
+	clientScore = 0;
+	rs = new ReservoirSampling(wordFile, SAMPLE_SIZE);
 	wordList = rs.getSample();
 	newGame();
     }
@@ -143,7 +158,7 @@ class ClientHandler extends Thread {
 	char[] chars = new char[correctWord.length()];
 	Arrays.fill(chars, '_');
 	guessString = new String(chars);
-}
+    }
     
     private boolean checkString(String clientGuess) {
 	
@@ -175,11 +190,11 @@ class ClientHandler extends Thread {
 	return false;	
     }
     
-    private void updateScore(boolean in) {
-	if (in == true) {
-	    score++;
+    private void updateScore(boolean increase) {
+	if (increase) {
+	    clientScore++;
 	} else {
-	    score--;
+	    clientScore--;
 	}
     }
     
@@ -191,8 +206,11 @@ class ClientHandler extends Thread {
 	remainingAttempts--;
     }
 
-    private void sendMessage(String message) {
-	toClient.println(message);
+    private void sendMessage(MessageTypes mt, String message) {
+	StringJoiner joiner = new StringJoiner(Constants.DELIMETER);
+        joiner.add(mt.toString());
+        joiner.add(message);
+	toClient.println(joiner.toString());
 	toClient.flush();
     }
 }
