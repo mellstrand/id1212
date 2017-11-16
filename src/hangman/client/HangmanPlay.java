@@ -6,6 +6,8 @@
 
 package hangman.client;
 
+import java.io.IOException;
+
 
 public class HangmanPlay {
  

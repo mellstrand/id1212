@@ -13,8 +13,9 @@ import java.util.Scanner;
 import java.util.StringJoiner;
 
 
-public class HangmanClient implements Runnable {
+public class HangmanClient {
     
+    private static final String PROMPT = ">> ";
     String name;
     ServerHandler serverHandler;
     Scanner scanner = new Scanner(System.in);
@@ -28,10 +29,10 @@ public class HangmanClient implements Runnable {
 	
         serverHandler = new ServerHandler();
 	serverHandler.connect(name);
-	new Thread(this).start();
+	//new Thread(this).start();
+	run();
     }
     
-    @Override
     public void run() {
 	
 	while(true) {
@@ -44,14 +45,20 @@ public class HangmanClient implements Runnable {
 		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
 		
 		switch(msgType) {
+		    case INIT:
+			sendMessage(MessageTypes.INIT, " ");
+			printLocal("Connected to the server, lets play.");
+			break;
 		    case STATUS:
-			print(Arrays.copyOfRange(requestToken, 1, requestToken.length));
+			printLocal(Arrays.copyOfRange(requestToken, 1, requestToken.length));
+			sendMessage(MessageTypes.GUESS, readUserInput());
 			break;
 		    case NEW:
+			printLocal(Arrays.copyOfRange(requestToken, 1, requestToken.length));
 			playAgain();
 			break;
 		    case GUESS:
-			sendMessage(MessageTypes.GUESS, scanner.nextLine());
+			sendMessage(MessageTypes.GUESS, readUserInput());
 			break;
 		    default:
 		}	
@@ -92,9 +99,15 @@ public class HangmanClient implements Runnable {
 	serverHandler.transmit(joiner.toString());
     }
     
-    private void print(String... parts) {
+    private void printLocal(String... parts) {
 	for (String part: parts) {
           System.out.println(part);
         }
     }
+    
+    private String readUserInput() {
+	System.out.print(PROMPT);
+	return scanner.nextLine();
+    }
+    
 }

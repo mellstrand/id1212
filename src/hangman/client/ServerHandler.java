@@ -29,8 +29,7 @@ public class ServerHandler {
     
     public void connect(String name) {
 	
-	CompletableFuture.runAsync(() -> {
-	    try {
+	try {
 		socket = new Socket();
 		socket.connect(new InetSocketAddress(SERVER_NAME, SERVER_PORT), TIMEOUT);
 
@@ -42,7 +41,7 @@ public class ServerHandler {
 	    } catch(IOException ieo) {
 		System.err.println(ieo);
 	    }
-	});
+	
     }
     
     public void disconnet() throws IOException {
@@ -52,10 +51,8 @@ public class ServerHandler {
     }
     
     public void transmit(String msg) {
-	CompletableFuture.runAsync(() -> { 
-	    toServer.println(msg);
-	    toServer.flush();
-	});
+	toServer.println(msg);
+	toServer.flush();
 	
     }
     

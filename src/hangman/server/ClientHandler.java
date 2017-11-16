@@ -45,7 +45,6 @@ class ClientHandler extends Thread {
 	
 	try {
 	    wordFile = new File("words.txt");
-	
 	    fromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 	    toClient = new PrintWriter(clientSocket.getOutputStream());
 
@@ -58,11 +57,11 @@ class ClientHandler extends Thread {
     public void run() {
 	
 	try {
-	    String namn = fromClient.readLine();
-	    System.out.println(namn + " anslöt servern");
-	    toClient.println("Hello, "+namn);
-	    toClient.flush();
+	    String name = fromClient.readLine();
+	    System.out.println(name + " joined the game server");
 
+	    sendMessage(MessageTypes.INIT, "Welcome " +name+ " lets play");
+	    
 	    while(true) {
 		
 		String indata = fromClient.readLine();
@@ -74,33 +73,37 @@ class ClientHandler extends Thread {
 		    
 		    case INIT:
 			initGame();
-			//SEND START MESSAGE
+			sendMessage(MessageTypes.STATUS, statusString());
 			break;
 		    case NEW:
 			newGame();
-			//SEND START MESSAGE
+			sendMessage(MessageTypes.STATUS, statusString());
 			break;
 		    case GUESS:
-			if(checkString(requestToken[1])) {
-			    updateScore(true);
-			    sendMessage(MessageTypes.GUESS, "Game complete, new game?");
-			} else {
-			    updateRemainingAttempts();
-			    sendMessage(MessageTypes.STATUS, statusString());
+			
+			switch(checkString(requestToken[1])) {
+			    case COMPLETE:
+				updateScore(true);
+				sendMessage(MessageTypes.NEW, "Game complete, new game?");
+				break;
+			    case FRAGMENT:
+				sendMessage(MessageTypes.STATUS, statusString());
+				break;
+			    case FAILED:
+				updateRemainingAttempts();
+				sendMessage(MessageTypes.STATUS, statusString());
+				break;
 			}
 			break;
 		    case END:
-			fromClient.close();
-			toClient.close();
-			clientSocket.close();
-			clientSocket = null;
+			closeConnection();
 			break;
 		    default:
 			   
 		}
 	    }
 	    
-	    System.out.println("Client " +namn +" ended the session");
+	    System.out.println("Client " +name +" ended the session");
 	
 	} catch(IOException ioe) {
 	    System.err.println(ioe);
@@ -160,7 +163,9 @@ class ClientHandler extends Thread {
 	guessString = new String(chars);
     }
     
-    private boolean checkString(String clientGuess) {
+    private WordStatus checkString(String clientGuess) {
+	
+	boolean fragment = false;
 	
 	if(correctWord.contains(clientGuess)) {
 	
@@ -172,22 +177,26 @@ class ClientHandler extends Thread {
 		for(int i=0; i<correctWord.length(); i++) {
 		    if(correctWord.charAt(i) == guess) {
 			temp[i] = guess;
+			fragment = true;
 		    }
 		}
 
 		guessString = String.valueOf(temp);
+		
+		if(guessString.equalsIgnoreCase(correctWord)) 
+		    return WordStatus.COMPLETE;
+		else if(fragment)
+		    return WordStatus.FRAGMENT;
 
-		return guessString.equalsIgnoreCase(correctWord);
+	    } else if (clientGuess.length() == correctWord.length() && clientGuess.equalsIgnoreCase(correctWord)) {
 
-	    } else if (clientGuess.length() == correctWord.length()) {
-
-		return clientGuess.equalsIgnoreCase(correctWord);
+		return WordStatus.COMPLETE;
 
 	    }
 	    
 	}
 	
-	return false;	
+	return WordStatus.FAILED;	
     }
     
     private void updateScore(boolean increase) {
@@ -212,5 +221,12 @@ class ClientHandler extends Thread {
         joiner.add(message);
 	toClient.println(joiner.toString());
 	toClient.flush();
+    }
+    
+    private void closeConnection() throws IOException {
+	fromClient.close();
+	toClient.close();
+	clientSocket.close();
+	clientSocket = null;		
     }
 }
