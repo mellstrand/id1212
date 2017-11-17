@@ -58,14 +58,15 @@ public class ServerHandler {
     
     /**
      * To disconnect from server
-     * 
-     * @throws IOException - if connection problem
      */
-    public void disconnect() throws IOException {
-	transmit(MessageTypes.END.toString());
-	socket.close();
-	socket = null;
-    }
+    public void disconnect() {
+	try {
+	    socket.close();
+	    socket = null;
+	} catch(IOException ioe) {
+	    System.out.println("Connection closed, terminating...");
+	}
+ }
     
     /**
      * To send server a message

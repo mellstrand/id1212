@@ -8,7 +8,7 @@ package hangman.server;
 /**
  * Defines different states when checking a guess
  */
-public enum WordStatus {
+public enum GuessStatus {
     /**
      * When correct word has been guessed
      */
@@ -20,6 +20,9 @@ public enum WordStatus {
     /**
      * When guessed character is not amongst the characters of the correct word
      */
-    FAILED
-    
+    FAILED,
+    /**
+     * Used when the client are guessing an already guessed character
+     */
+    PREVIOUS
 }

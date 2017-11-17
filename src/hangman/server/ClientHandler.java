@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -32,6 +33,7 @@ class ClientHandler extends Thread {
     private List<String> wordList;
     private String correctWord;
     private String guessString;
+    private LinkedList<Character> guessedCharacters;
     private int remainingAttempts;
     private int clientScore;
     private boolean clientPlaying;
@@ -50,6 +52,7 @@ class ClientHandler extends Thread {
 	    wordFile = new File("words.txt");
 	    fromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 	    toClient = new PrintWriter(clientSocket.getOutputStream());
+	    guessedCharacters = new LinkedList<>();
 	    clientPlaying = true;
 	    
 	} catch(IOException e) {
@@ -67,11 +70,14 @@ class ClientHandler extends Thread {
 	    String name = fromClient.readLine();
 	    System.out.println(name + " joined the game server");
 
-	    sendMessage(MessageTypes.INIT, "Welcome " +name+ " lets play");
+	    sendMessage(MessageTypes.INIT, "SERVER: Welcome " +name);
 	    
 	    while(clientPlaying) {
 		
 		String indata = fromClient.readLine();
+		//DEBUG/INFO message
+		System.out.println("Message from: "+name+ " - " +indata);
+
 		if(indata==null || indata.equals("")) break;
 		String[] requestToken = indata.split(Constants.DELIMETER);
 		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
@@ -94,7 +100,7 @@ class ClientHandler extends Thread {
 			    switch(checkString(requestToken[1])) {
 				case COMPLETE:
 				    updateScore(true);
-				    sendMessage(MessageTypes.NEW, "Correct! Word was \""+correctWord+"\"! New game?");
+				    sendMessage(MessageTypes.NEW, "SERVER: Correct! Word was: "+correctWord+ ". New game?");
 				    break;
 				case FRAGMENT:
 				    sendMessage(MessageTypes.STATUS, statusString());
@@ -104,13 +110,16 @@ class ClientHandler extends Thread {
 					sendMessage(MessageTypes.STATUS, statusString());
 				    } else {
 					updateScore(false);
-					sendMessage(MessageTypes.NEW, "Out of attempts, try with a new word?");
+					sendMessage(MessageTypes.NEW, "SERVER: No more attempts, correct word was: "+correctWord+".", "Try with a new word?");
 				    }
+				    break;
+				case PREVIOUS:
+				    sendMessage(MessageTypes.STATUS, "SERVER: Already guessed character", statusString());
 				    break;
 			    }
 			
 			} catch(ArrayIndexOutOfBoundsException e) {
-				sendMessage(MessageTypes.STATUS, "No guess, make a new one!", statusString());
+				sendMessage(MessageTypes.STATUS, "SERVER: No guess, make a new one!", statusString());
 			}
 			break;
 		    case END:
@@ -164,6 +173,7 @@ class ClientHandler extends Thread {
 	setNewWord(getNewWord());
 	setRemainingAttempts();
 	initGuessString();
+	guessedCharacters.clear();
     } 
     
     /**
@@ -219,40 +229,47 @@ class ClientHandler extends Thread {
      *				FRAGEMENT if a character is correct
      *				FAILED if wrongly guessed
      */
-    private WordStatus checkString(String clientGuess) {
+    private GuessStatus checkString(String clientGuess) {
 	
-	boolean fragment = false;
+	//if(correctWord.contains(clientGuess)) {
 	
-	if(correctWord.contains(clientGuess)) {
+	System.out.println("DEBUG: " + clientGuess);
 	
-	    if(clientGuess.length() == 1) {
-
+	if(clientGuess.length() == 1) {
+	    
+	    char guess = clientGuess.charAt(0);	    
+	    if( !(guessedCharacters.contains(guess)) ) {
+		
+		System.out.println("DEBUG INNAN ADD: " + guessedCharacters.toString());
+		
+		guessedCharacters.add(guess);
+		
+		System.out.println("DEBUG EFTER ADD: " + guessedCharacters.toString());
+		
+		boolean fragment = false;
 		char[] temp = guessString.toCharArray();
 
-		char guess = clientGuess.charAt(0);
 		for(int i=0; i<correctWord.length(); i++) {
 		    if(correctWord.charAt(i) == guess) {
 			temp[i] = guess;
 			fragment = true;
 		    }
 		}
-
 		guessString = String.valueOf(temp);
 		
 		if(guessString.equalsIgnoreCase(correctWord)) 
-		    return WordStatus.COMPLETE;
+		    return GuessStatus.COMPLETE;
 		else if(fragment)
-		    return WordStatus.FRAGMENT;
-
-	    } else if (clientGuess.length() == correctWord.length() && clientGuess.equalsIgnoreCase(correctWord)) {
-
-		return WordStatus.COMPLETE;
-
+		    return GuessStatus.FRAGMENT;
+	    } else {
+		return GuessStatus.PREVIOUS;
 	    }
 	    
-	}
+	} else if (clientGuess.length() == correctWord.length() && clientGuess.equalsIgnoreCase(correctWord)) {
+	    return GuessStatus.COMPLETE;
+	} 
 	
-	return WordStatus.FAILED;	
+	return GuessStatus.FAILED;
     }
     
     /**
