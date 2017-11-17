@@ -5,6 +5,9 @@
 
 package hangman.common;
 
+/**
+ * Defines types of messages when sending messages between server and client 
+ */
 public enum MessageTypes {
     
     /*
@@ -12,7 +15,7 @@ public enum MessageTypes {
      */
     INIT,
     /*
-     * To start a new game
+     * To start a new game after a complete game or faulty one
      */
     NEW,
     /*
@@ -20,7 +23,7 @@ public enum MessageTypes {
      */
     GUESS,
     /*
-     *
+     * When server is sending status of the current game
      */
     STATUS,
     /*

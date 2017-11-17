@@ -9,11 +9,12 @@ package hangman.server;
 import java.net.*;
 import java.io.*;
 
-
+/**
+ * Starts the server for the game
+ */
 public class HangmanServer {
     
     private static final int SERVER_PORT = 5000;
-    
     
     public static void main(String[] args) {
 	
@@ -26,7 +27,6 @@ public class HangmanServer {
 	} catch(IOException e) {
 	    System.err.println(e);
 	}
-	
     }
 }
 

@@ -39,6 +39,11 @@ class ClientHandler extends Thread {
     int remainingAttempts;
     int clientScore;
     
+    /**
+     * Constructor, opens word file and input and output streams for communication
+     * 
+     * @param clientSocket - Socket for communication with client
+     */
     public ClientHandler(Socket clientSocket) {
 	
 	this.clientSocket = clientSocket;
@@ -53,8 +58,13 @@ class ClientHandler extends Thread {
 	}
     }
     
+    /**
+     * Receives messages from client and interprets them to perform correct action
+     */
     @Override
     public void run() {
+	
+	boolean clientPlaying = true;
 	
 	try {
 	    String name = fromClient.readLine();
@@ -62,7 +72,7 @@ class ClientHandler extends Thread {
 
 	    sendMessage(MessageTypes.INIT, "Welcome " +name+ " lets play");
 	    
-	    while(true) {
+	    while(clientPlaying) {
 		
 		String indata = fromClient.readLine();
 		if(indata==null || indata.equals("")) break;
@@ -80,30 +90,41 @@ class ClientHandler extends Thread {
 			sendMessage(MessageTypes.STATUS, statusString());
 			break;
 		    case GUESS:
+			/* If clients sends a empty message, 'requestToken[1]' will not exist
+			 * Catch exception and inform client to make a new guess
+			 */
+			try {
+			    switch(checkString(requestToken[1])) {
+				case COMPLETE:
+				    updateScore(true);
+				    sendMessage(MessageTypes.NEW, "Correct, game complete! New game?");
+				    break;
+				case FRAGMENT:
+				    sendMessage(MessageTypes.STATUS, statusString());
+				    break;
+				case FAILED:
+				    if(updateRemainingAttempts()){
+					sendMessage(MessageTypes.STATUS, statusString());
+				    } else {
+					updateScore(false);
+					sendMessage(MessageTypes.NEW, "Out of attempts, try with a new word?");
+				    }
+				    break;
+			    }
 			
-			switch(checkString(requestToken[1])) {
-			    case COMPLETE:
-				updateScore(true);
-				sendMessage(MessageTypes.NEW, "Game complete, new game?");
-				break;
-			    case FRAGMENT:
-				sendMessage(MessageTypes.STATUS, statusString());
-				break;
-			    case FAILED:
-				updateRemainingAttempts();
-				sendMessage(MessageTypes.STATUS, statusString());
-				break;
+			} catch(ArrayIndexOutOfBoundsException e) {
+				sendMessage(MessageTypes.STATUS, "No guess, make a new one!", statusString());
 			}
 			break;
 		    case END:
 			closeConnection();
+			clientPlaying = false;
 			break;
-		    default:
 			   
 		}
 	    }
 	    
-	    System.out.println("Client " +name +" ended the session");
+	    System.out.println(name +" ended the session");
 	
 	} catch(IOException ioe) {
 	    System.err.println(ioe);
@@ -111,6 +132,11 @@ class ClientHandler extends Thread {
 	
     }
     
+    /**
+     * Creating game status string to send to client
+     * 
+     * @return a String with game info
+     */
     private String statusString() {
 	
 	StringJoiner joiner = new StringJoiner(Constants.DELIMETER);
@@ -120,6 +146,11 @@ class ClientHandler extends Thread {
         return joiner.toString();
     }
  
+    /**
+     * Starting of a game
+     * 
+     * @throws IOException when ReservoirSampling cant read the word file
+     */
     private void initGame() throws IOException {
 	clientScore = 0;
 	rs = new ReservoirSampling(wordFile, SAMPLE_SIZE);
@@ -127,12 +158,23 @@ class ClientHandler extends Thread {
 	newGame();
     }
     
+    /**
+     * When the client wants to guess another word
+     * 
+     * @throws IOException when ReservoirSampling cant read the word file
+     */
     private void newGame() throws IOException {
 	setNewWord(getNewWord());
 	setRemainingAttempts();
 	initGuessString();
     } 
     
+    /**
+     * Get a new word from the sampling
+     * 
+     * @return the new word to guess
+     * @throws IOException if the ResevoirSampling class could not read the file
+     */
     private String getNewWord() throws IOException {
 
 	if(!wordList.isEmpty()) {
@@ -140,7 +182,7 @@ class ClientHandler extends Thread {
 	    String newWord = wordList.get(0);
 	    wordList.remove(0);
 	
-	    return newWord;
+	    return newWord.toLowerCase();
 	
 	} else {
 	    
@@ -148,21 +190,38 @@ class ClientHandler extends Thread {
 	    String newWord = wordList.get(0);
 	    wordList.remove(0);
 	
-	    return newWord;
+	    return newWord.toLowerCase();
 	}
 	
     }
     
+    /**
+     * Stores the new word in a String variable
+     * 
+     * @param newWord - to be used as the word to guess 
+     */
     private void setNewWord(String newWord) {
 	correctWord = newWord;
     }
     
+    /**
+     * Creates a new string with as many underscores 
+     * as characters in the word to guess
+     */
     private void initGuessString() {
 	char[] chars = new char[correctWord.length()];
 	Arrays.fill(chars, '_');
 	guessString = new String(chars);
     }
     
+    /**
+     * Checks the guess to the correct word.
+     * 
+     * @param clientGuess - guess from the client, one character or a whole word
+     * @return enum WordStatus, COMPLETE for the whole word, 
+     *				FRAGEMENT if a character is correct
+     *				FAILED if wrongly guessed
+     */
     private WordStatus checkString(String clientGuess) {
 	
 	boolean fragment = false;
@@ -199,6 +258,12 @@ class ClientHandler extends Thread {
 	return WordStatus.FAILED;	
     }
     
+    /**
+     * Updating the game score
+     * 
+     * @param increase - true to increase the score, i.e. when completing a game
+     *			 else decrease when losing a game
+     */
     private void updateScore(boolean increase) {
 	if (increase) {
 	    clientScore++;
@@ -207,22 +272,44 @@ class ClientHandler extends Thread {
 	}
     }
     
+    /**
+     * Sets number of attempts to number of characters in word to guess
+     */
     private void setRemainingAttempts() {
 	remainingAttempts = correctWord.length();
     }
     
-    private void updateRemainingAttempts() {
-	remainingAttempts--;
+    /**
+     * Decreasing number of attempts a client has by one when guessing wrong
+     * 
+     * @return - true for values different (higher) from zero.
+     *		 false when zero, i.e. out of attempts
+     */
+    private boolean updateRemainingAttempts() {
+	return --remainingAttempts != 0;
     }
 
-    private void sendMessage(MessageTypes mt, String message) {
+    /**
+     * Send messages to client
+     * 
+     * @param mt - enum MessageTypes, for specifying different types of communication
+     * @param messages - messages to be sent
+     */
+    private void sendMessage(MessageTypes mt, String... messages) {
 	StringJoiner joiner = new StringJoiner(Constants.DELIMETER);
         joiner.add(mt.toString());
-        joiner.add(message);
+        for(String message : messages) {
+	   joiner.add(message); 
+	}
 	toClient.println(joiner.toString());
 	toClient.flush();
     }
     
+    /**
+     * To close connection
+     * 
+     * @throws IOException when connection problem
+     */
     private void closeConnection() throws IOException {
 	fromClient.close();
 	toClient.close();

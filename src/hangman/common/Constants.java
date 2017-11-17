@@ -1,16 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ *
+ * @author mellstrand
+ * @date 2017-11-16
  */
 package hangman.common;
 
 /**
- *
- * @author mellstrand
+ * Constants used by server and client 
  */
 public class Constants {
-    
+    /**
+     * Used for separating message parts
+     */
     public final static String DELIMETER = "##";
     
 }

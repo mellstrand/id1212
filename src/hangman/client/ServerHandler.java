@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  *
  * @author mellstrand
+ * @date 2017-11-16
  */
 public class ServerHandler {
     
@@ -27,6 +28,11 @@ public class ServerHandler {
     BufferedReader fromServer;
     PrintWriter toServer;
     
+    /**
+     * Setting up the connection to the server and creates in/out streams
+     * 
+     * @param name - Name of the player
+     */
     public void connect(String name) {
 	
 	try {
@@ -44,18 +50,34 @@ public class ServerHandler {
 	
     }
     
-    public void disconnet() throws IOException {
+    /**
+     * To disconnect from server
+     * 
+     * @throws IOException - if connection problem
+     */
+    public void disconnect() throws IOException {
 	socket.close();
 	socket = null;
 	
     }
     
+    /**
+     * To send server a message
+     * 
+     * @param msg - message to send 
+     */
     public void transmit(String msg) {
 	toServer.println(msg);
 	toServer.flush();
 	
     }
     
+    /**
+     * Receive message from server
+     * 
+     * @return - message from server
+     * @throws IOException - if connection problem
+     */
     public String receive() throws IOException {
 	return fromServer.readLine();
     }

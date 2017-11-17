@@ -1,13 +1,13 @@
 /**
  *
  * @author mellstrand
+ * @date 2017-11-16
  */
 package hangman.client;
 
 import hangman.common.Constants;
 import hangman.common.MessageTypes;
 import java.io.*;
-import java.net.*;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.StringJoiner;
@@ -33,6 +33,10 @@ public class HangmanClient {
 	run();
     }
     
+    /**
+     * Receives messages from the server and interprets them
+     * and perform the correct action to it
+     */
     public void run() {
 	
 	while(true) {
@@ -70,27 +74,45 @@ public class HangmanClient {
 	
     }
     
+    /**
+     * Handles play again interactions
+     */
     private void playAgain() {
 	
 	boolean run = true;
 	
-	System.out.println("Vill du spela igen? (y or n)");
+	printLocal("Answer with 'y' or 'n'");
 	    
 	while(run) {
 	    
-	    String userInput = scanner.nextLine();
+	    String userInput = readUserInput();
 	    if(userInput.equalsIgnoreCase("y")){
 		run = false;
-		sendMessage(MessageTypes.NEW, "");
+		sendMessage(MessageTypes.NEW);
 	    } else if(userInput.equalsIgnoreCase("n")) {
-		sendMessage(MessageTypes.END, "");
+		quitPlaying();
 	    } else {
-		System.out.println("Förstod inte, svara 'y' eller 'n': ");
+		printLocal("Usage: 'y' or 'n'");
 	    }
 	}
 	
     }
     
+    /**
+     * Send message consisting of only type of message
+     * 
+     * @param mt - enum MessageTypes, to specify type of message
+     */
+    private void sendMessage(MessageTypes mt) {
+	serverHandler.transmit(mt.toString());
+    }
+    
+    /**
+     * Joins type and message to one string with DELIMETER and sends to server
+     * 
+     * @param mt - enum MessageTypes, to specify type of message
+     * @param line  - message to server
+     */
     private void sendMessage(MessageTypes mt, String line) {
 
     	StringJoiner joiner = new StringJoiner(Constants.DELIMETER);
@@ -99,15 +121,34 @@ public class HangmanClient {
 	serverHandler.transmit(joiner.toString());
     }
     
+    /**
+     * For printing local messages, i.e. on client side
+     * 
+     * @param parts - String to be printed 
+     */
     private void printLocal(String... parts) {
 	for (String part: parts) {
           System.out.println(part);
         }
     }
     
+    /**
+     * Print prompt and read user input from the console
+     * 
+     * @return The user input
+     */
     private String readUserInput() {
 	System.out.print(PROMPT);
 	return scanner.nextLine();
+    }
+    
+    /**
+     * When wanting to stop playing, terminate
+     */
+    private void quitPlaying() {
+	sendMessage(MessageTypes.END);
+	//serverHandler.disconnect();
+	System.exit(0);
     }
     
 }

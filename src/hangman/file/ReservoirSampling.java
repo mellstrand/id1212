@@ -18,11 +18,22 @@ import java.util.List;
 import java.util.Random;
 
 
+/**
+ * Helper to get a sample from the big word file.
+ * Instead of going through it, twice, every time when we want a new random word
+ * create a random sample of it and use that list instead.
+ */
 public class ReservoirSampling {
     
     private int size;
-    public File file;
+    private File file;
     
+    /**
+     * Constructor for the sampling class
+     * 
+     * @param file - file with words
+     * @param size - sample size
+     */
     public ReservoirSampling(File file, int size) {
 	
 	this.file = file;
@@ -30,6 +41,13 @@ public class ReservoirSampling {
 	
     }
     
+    /**
+     * The a sample from the word file
+     * 
+     * @return - List of the sample
+     * @throws FileNotFoundException - File is missing
+     * @throws IOException - When reading the file goes wrong
+     */
     public List<String> getSample() throws FileNotFoundException, IOException {
 	
 	int count = 0;

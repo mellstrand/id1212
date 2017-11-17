@@ -1,20 +1,25 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ *
+ * @author mellstrand
+ * @date 2017-11-16
  */
 package hangman.server;
 
 /**
- *
- * @author mellstrand
+ * Defines different states when checking a guess
  */
 public enum WordStatus {
-    
+    /**
+     * When correct word has been guessed
+     */
     COMPLETE,
-    
+    /**
+     * When a character is correct, not the whole word is correct yet
+     */
     FRAGMENT,
-    
+    /**
+     * When guessed character is not amongst the characters of the correct word
+     */
     FAILED
     
 }

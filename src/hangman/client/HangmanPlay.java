@@ -6,13 +6,13 @@
 
 package hangman.client;
 
-import java.io.IOException;
-
-
+/**
+ *  Class to start the game 
+ */
 public class HangmanPlay {
  
     /**
-     * @param args the command line arguments
+     * @param args - The command line argument, should be the players name
      */
     public static void main(String[] args) {
 	
@@ -24,7 +24,7 @@ public class HangmanPlay {
 	    name = "DefaultPlayer";
 	}
 	
-	new HangmanClient("TEST").start();
+	new HangmanClient(name).start();
  
     }
 }
