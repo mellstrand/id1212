@@ -79,9 +79,8 @@ class ClientHandler extends Thread {
 		System.out.println("Message from: "+name+ " - " +indata);
 
 		if(indata==null || indata.equals("")) break;
-		String[] requestToken = indata.split(Constants.DELIMETER);
-		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
-		
+		String[] requestToken = indata.split(Constants.TCP_DELIMETER);
+		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());	
 /*
 		try {
 		    sleep(10000);
@@ -149,7 +148,7 @@ class ClientHandler extends Thread {
      */
     private String statusString() {
 	
-	StringJoiner joiner = new StringJoiner(Constants.DELIMETER);
+	StringJoiner joiner = new StringJoiner(Constants.TCP_DELIMETER);
         joiner.add("Word: "+guessString);
         joiner.add("Remaining Attempts: "+remainingAttempts);
 	joiner.add("Score: "+clientScore);
@@ -232,6 +231,7 @@ class ClientHandler extends Thread {
      * @return enum WordStatus, COMPLETE for the whole word, 
      *				FRAGEMENT if a character is correct
      *				FAILED if wrongly guessed
+     *				PREVIOUS if client has already guessed that char
      */
     private GuessStatus checkString(String clientGuess) {
 	
@@ -305,7 +305,7 @@ class ClientHandler extends Thread {
      * @param messages - messages to be sent
      */
     private void sendMessage(MessageTypes mt, String... messages) {
-	StringJoiner joiner = new StringJoiner(Constants.DELIMETER);
+	StringJoiner joiner = new StringJoiner(Constants.TCP_DELIMETER);
         joiner.add(mt.toString());
         for(String message : messages) {
 	   joiner.add(message); 

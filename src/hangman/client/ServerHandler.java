@@ -5,14 +5,12 @@
  */
 package hangman.client;
 
-import hangman.common.MessageTypes;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.CompletableFuture;
 
 /**
  *
@@ -38,22 +36,20 @@ public class ServerHandler {
      * @param client - Client who sets up the connection
      */
     public void connect(String name, HangmanClient client) {
-	//CompletableFuture.runAsync(() -> {
 
-	    try {
-		    socket = new Socket();
-		    socket.connect(new InetSocketAddress(SERVER_NAME, SERVER_PORT), TIMEOUT);
+	try {
+	    socket = new Socket();
+	    socket.connect(new InetSocketAddress(SERVER_NAME, SERVER_PORT), TIMEOUT);
 
-		    fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		    toServer = new PrintWriter(socket.getOutputStream());
+	    fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+	    toServer = new PrintWriter(socket.getOutputStream());
 
-		    new Thread(new MessageListener(client, fromServer)).start();
-		    transmit(name);
+	    new Thread(new MessageListener(client, fromServer)).start();
+	    transmit(name);
 
-		} catch(IOException ieo) {
-		    System.err.println(ieo);
-		}
-	//});
+	} catch(IOException ieo) {
+	    System.err.println(ieo);
+	}
     }
     
     /**
@@ -74,9 +70,7 @@ public class ServerHandler {
      * @param msg - message to send 
      */
     public void transmit(String msg) {
-	//CompletableFuture.runAsync(() -> {
 	    toServer.println(msg);
 	    toServer.flush();
-	//});
     }
 }

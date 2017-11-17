@@ -12,6 +12,10 @@ public class Constants {
     /**
      * Used for separating message parts
      */
-    public final static String DELIMETER = "##";
+    public final static String TCP_DELIMETER = "##";
+    /**
+     * Used when splitting local input 
+     */
+    public final static String LOCAL_DELIMETER = " ";
     
 }

@@ -7,7 +7,6 @@ package hangman.client;
 
 import hangman.common.Constants;
 import hangman.common.MessageTypes;
-import java.io.*;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.StringJoiner;
@@ -32,8 +31,8 @@ public class HangmanClient implements Runnable {
 	    return;
 	}
         serverHandler = new ServerHandler();
-	serverHandler.connect(name, this);
-	connected = true;
+	//serverHandler.connect(name, this);
+	//connected = true;
 	
 	new Thread(this).start();
     }
@@ -45,21 +44,19 @@ public class HangmanClient implements Runnable {
     @Override
     public void run() {
 	
-	//serverHandler.connect(name, this);
-	//connected = true;
-	
 	printLocal("-- Welcome to Hangman Game ---", "Usage: \t 'NEW' for a new word.",
 		    "\t 'END' to stop playing", "\t 'GUESS' to make a guess\n");
+	
+	serverHandler.connect(name, this);
+	connected = true;
 	
 	while(connected) {
 	    
 	    String userInput = readUserInput();
 	    if(userInput==null || userInput.equals("")) break;
-	    String[] requestToken = userInput.split(" ");
+	    String[] requestToken = userInput.split(Constants.LOCAL_DELIMETER);
 	    try {
 		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
-		
-		printLocal("DEBUG: " + msgType);
 		
 		switch(msgType) {
 		    case NEW:
@@ -102,7 +99,7 @@ public class HangmanClient implements Runnable {
      */
     private void sendMessage(MessageTypes mt, String line) {
 
-    	StringJoiner joiner = new StringJoiner(Constants.DELIMETER);
+    	StringJoiner joiner = new StringJoiner(Constants.TCP_DELIMETER);
         joiner.add(mt.toString());
         joiner.add(line);
 	serverHandler.transmit(joiner.toString());
@@ -125,14 +122,12 @@ public class HangmanClient implements Runnable {
      * @return The user input
      */
     private String readUserInput() {
-	System.out.print(PROMPT);
+	printLocal(PROMPT);
 	return scanner.nextLine();
     }
     
     /**
      * Client wants to stop playing, terminate program
-     *
-     * @throws IOException - When connection problem
      */
     private void quitPlaying() {
 	printLocal("Closing session...");
@@ -141,9 +136,9 @@ public class HangmanClient implements Runnable {
 	System.exit(0);
     }
     
-    public void messageHandler(String serverMessage) throws IOException {
+    public void messageHandler(String serverMessage) {
 	
-	String[] requestToken = serverMessage.split(Constants.DELIMETER);
+	String[] requestToken = serverMessage.split(Constants.TCP_DELIMETER);
 	MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
 
 	switch(msgType) {
@@ -152,10 +147,15 @@ public class HangmanClient implements Runnable {
 		sendMessage(MessageTypes.INIT);
 		printLocal("Connected to the server, lets play.");
 		break;
+/*  
 	    case STATUS:
 		printLocal(Arrays.copyOfRange(requestToken, 1, requestToken.length));
 		break;
 	    case NEW:
+		printLocal(Arrays.copyOfRange(requestToken, 1, requestToken.length));
+		break;
+*/
+	    default:
 		printLocal(Arrays.copyOfRange(requestToken, 1, requestToken.length));
 		break;
 	}
