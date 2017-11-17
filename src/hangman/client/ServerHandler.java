@@ -31,12 +31,14 @@ public class ServerHandler {
     
     /**
      * Setting up the connection to the server and creates in/out streams
+     * Starts a new thread which will be listening
+     * for new messages from the server
      * 
      * @param name - Name of the player
      * @param client - Client who sets up the connection
      */
     public void connect(String name, HangmanClient client) {
-	CompletableFuture.runAsync(() -> {
+	//CompletableFuture.runAsync(() -> {
 
 	    try {
 		    socket = new Socket();
@@ -46,14 +48,12 @@ public class ServerHandler {
 		    toServer = new PrintWriter(socket.getOutputStream());
 
 		    new Thread(new MessageListener(client, fromServer)).start();
-		    
 		    transmit(name);
-		    
 
 		} catch(IOException ieo) {
 		    System.err.println(ieo);
 		}
-	});
+	//});
     }
     
     /**
@@ -74,23 +74,9 @@ public class ServerHandler {
      * @param msg - message to send 
      */
     public void transmit(String msg) {
-	CompletableFuture.runAsync(() -> {
+	//CompletableFuture.runAsync(() -> {
 	    toServer.println(msg);
 	    toServer.flush();
-	});
+	//});
     }
-    
-    /**
-     * Receive message from server
-     * 
-     * @return - message from server
-     * @throws IOException - if connection problem
-     */
-    
-    /*
-    public String receive() throws IOException {
-	return fromServer.readLine();
-    }
-    */
-    
 }

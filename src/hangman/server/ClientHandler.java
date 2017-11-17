@@ -82,6 +82,13 @@ class ClientHandler extends Thread {
 		String[] requestToken = indata.split(Constants.DELIMETER);
 		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
 		
+/*
+		try {
+		    sleep(10000);
+		} catch(Exception e) {
+		    //Do nothing
+		}
+*/
 		switch(msgType) {
 		    
 		    case INIT:
@@ -93,9 +100,6 @@ class ClientHandler extends Thread {
 			sendMessage(MessageTypes.STATUS, statusString());
 			break;
 		    case GUESS:
-			/* If clients sends a empty message, 'requestToken[1]' will not exist
-			 * Catch exception and inform client to make a new guess
-			 */
 			try {
 			    switch(checkString(requestToken[1])) {
 				case COMPLETE:
@@ -231,21 +235,12 @@ class ClientHandler extends Thread {
      */
     private GuessStatus checkString(String clientGuess) {
 	
-	//if(correctWord.contains(clientGuess)) {
-	
-	System.out.println("DEBUG: " + clientGuess);
-	
 	if(clientGuess.length() == 1) {
 	    
 	    char guess = clientGuess.charAt(0);	    
 	    if( !(guessedCharacters.contains(guess)) ) {
 		
-		System.out.println("DEBUG INNAN ADD: " + guessedCharacters.toString());
-		
-		guessedCharacters.add(guess);
-		
-		System.out.println("DEBUG EFTER ADD: " + guessedCharacters.toString());
-		
+		guessedCharacters.add(guess);	
 		boolean fragment = false;
 		char[] temp = guessString.toCharArray();
 
