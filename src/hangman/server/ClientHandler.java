@@ -1,7 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ *
+ * @author mellstrand
+ * @date 2017-11-15
  */
 package hangman.server;
 
@@ -19,28 +19,26 @@ import java.util.List;
 import java.util.StringJoiner;
 
 /**
- *
- * @author mellstrand
- * @date 2017-11-15
+ * Class that handles each client that connects to the server for playing
  */
-
 class ClientHandler extends Thread {
     
     private final static int SAMPLE_SIZE = 10;
-    
-    Socket clientSocket;
-    BufferedReader fromClient;
-    PrintWriter toClient;
-    ReservoirSampling rs;
-    File wordFile;
-    List<String> wordList;
-    String correctWord;
-    String guessString;
-    int remainingAttempts;
-    int clientScore;
+    private Socket clientSocket;
+    private BufferedReader fromClient;
+    private PrintWriter toClient;
+    private ReservoirSampling rs;
+    private File wordFile;
+    private List<String> wordList;
+    private String correctWord;
+    private String guessString;
+    private int remainingAttempts;
+    private int clientScore;
+    private boolean clientPlaying;
+	
     
     /**
-     * Constructor, opens word file and input and output streams for communication
+     * Constructor, opens word file and input/output streams for communication
      * 
      * @param clientSocket - Socket for communication with client
      */
@@ -52,7 +50,8 @@ class ClientHandler extends Thread {
 	    wordFile = new File("words.txt");
 	    fromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 	    toClient = new PrintWriter(clientSocket.getOutputStream());
-
+	    clientPlaying = true;
+	    
 	} catch(IOException e) {
 	    System.err.println(e);
 	}
@@ -63,8 +62,6 @@ class ClientHandler extends Thread {
      */
     @Override
     public void run() {
-	
-	boolean clientPlaying = true;
 	
 	try {
 	    String name = fromClient.readLine();
@@ -97,7 +94,7 @@ class ClientHandler extends Thread {
 			    switch(checkString(requestToken[1])) {
 				case COMPLETE:
 				    updateScore(true);
-				    sendMessage(MessageTypes.NEW, "Correct, game complete! New game?");
+				    sendMessage(MessageTypes.NEW, "Correct! Word was \""+correctWord+"\"! New game?");
 				    break;
 				case FRAGMENT:
 				    sendMessage(MessageTypes.STATUS, statusString());
@@ -118,7 +115,6 @@ class ClientHandler extends Thread {
 			break;
 		    case END:
 			closeConnection();
-			clientPlaying = false;
 			break;
 			   
 		}
@@ -127,6 +123,7 @@ class ClientHandler extends Thread {
 	    System.out.println(name +" ended the session");
 	
 	} catch(IOException ioe) {
+	    closeConnection();
 	    System.err.println(ioe);
 	}
 	
@@ -306,14 +303,16 @@ class ClientHandler extends Thread {
     }
     
     /**
-     * To close connection
-     * 
-     * @throws IOException when connection problem
+     * Close connection
      */
-    private void closeConnection() throws IOException {
-	fromClient.close();
-	toClient.close();
-	clientSocket.close();
-	clientSocket = null;		
+    private void closeConnection() {
+	try {
+	    clientSocket.close();
+	    clientSocket = null;
+	} catch(IOException ioe) {
+	    System.out.println(ioe);
+	}
+	clientPlaying = false;
+			
     }
 }

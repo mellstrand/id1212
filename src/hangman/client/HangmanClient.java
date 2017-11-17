@@ -13,12 +13,13 @@ import java.util.Scanner;
 import java.util.StringJoiner;
 
 
-public class HangmanClient {
+public class HangmanClient implements Runnable {
     
     private static final String PROMPT = ">> ";
-    String name;
-    ServerHandler serverHandler;
-    Scanner scanner = new Scanner(System.in);
+    private ServerHandler serverHandler;
+    private final Scanner scanner = new Scanner(System.in);
+    private String name;
+    private boolean connected = false;
     
     public HangmanClient(String name) {
 	
@@ -27,49 +28,51 @@ public class HangmanClient {
     
     public void start() {
 	
+	System.out.println("DEBUG: start-method");
+	if(connected) {
+	    return;
+	}
         serverHandler = new ServerHandler();
-	serverHandler.connect(name);
-	//new Thread(this).start();
-	run();
+	//serverHandler.connect(name);
+	new Thread(this).start();
+	//run();
     }
     
     /**
      * Receives messages from the server and interprets them
      * and perform the correct action to it
      */
+    @Override
     public void run() {
 	
-	while(true) {
+	serverHandler.connect(name, this);
+	connected = true;
+	
+	while(connected) {
 	    
+		
 	    try {
-	    
-		String inData = serverHandler.receive();
-		if(inData==null || inData.equals("")) break;
-		String[] requestToken = inData.split(Constants.DELIMETER);
+		String userInput = readUserInput();
+		if(userInput==null || userInput.equals("")) break;
+		String[] requestToken = userInput.split(Constants.DELIMETER);
 		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
 		
 		switch(msgType) {
-		    case INIT:
-			sendMessage(MessageTypes.INIT, " ");
-			printLocal("Connected to the server, lets play.");
+		  case NEW:
+			sendMessage(MessageTypes.NEW);
 			break;
-		    case STATUS:
-			printLocal(Arrays.copyOfRange(requestToken, 1, requestToken.length));
-			sendMessage(MessageTypes.GUESS, readUserInput());
-			break;
-		    case NEW:
-			printLocal(Arrays.copyOfRange(requestToken, 1, requestToken.length));
-			playAgain();
-			break;
-		    case GUESS:
-			sendMessage(MessageTypes.GUESS, readUserInput());
+		    case END:
+			sendMessage(MessageTypes.END);
+			quitPlaying();
 			break;
 		    default:
-		}	
-		
+			printLocal("Dont understand the request \n Usage 'NEW' or 'END'");
+		}
 	    } catch(IOException ioe) {
+		connected = false;
 		System.err.println(ioe);
 	    }
+	
 	}   
 	
     }
@@ -77,7 +80,7 @@ public class HangmanClient {
     /**
      * Handles play again interactions
      */
-    private void playAgain() {
+    private void playAgain() throws IOException{
 	
 	boolean run = true;
 	
@@ -126,7 +129,7 @@ public class HangmanClient {
      * 
      * @param parts - String to be printed 
      */
-    private void printLocal(String... parts) {
+    private synchronized void printLocal(String... parts) {
 	for (String part: parts) {
           System.out.println(part);
         }
@@ -143,12 +146,43 @@ public class HangmanClient {
     }
     
     /**
-     * When wanting to stop playing, terminate
+     * Client wants to stop playing, terminate program
+     *
+     * @throws IOException - When connection problem
      */
-    private void quitPlaying() {
-	sendMessage(MessageTypes.END);
-	//serverHandler.disconnect();
+    private void quitPlaying() throws IOException {
+	//sendMessage(MessageTypes.END);
+	serverHandler.disconnect();
 	System.exit(0);
+    }
+    
+    public void messageHandler(String serverMessage) throws IOException {
+	
+	if(!(serverMessage==null || serverMessage.equals(""))) {
+		String[] requestToken = serverMessage.split(Constants.DELIMETER);
+		MessageTypes msgType = MessageTypes.valueOf(requestToken[0].toUpperCase());
+		
+		switch(msgType) {
+		    case INIT:
+			sendMessage(MessageTypes.INIT, " ");
+			printLocal("Connected to the server, lets play.");
+			break;
+		    case STATUS:
+			printLocal(Arrays.copyOfRange(requestToken, 1, requestToken.length));
+			sendMessage(MessageTypes.GUESS, readUserInput());
+			break;
+		    case NEW:
+			printLocal(Arrays.copyOfRange(requestToken, 1, requestToken.length));
+			playAgain();
+			break;
+		    case GUESS:
+			sendMessage(MessageTypes.GUESS, readUserInput());
+			break;
+		    default:
+		}
+		
+	}
+	printLocal("No message, problem something");
     }
     
 }
